@@ -1,113 +1,102 @@
-import Image from "next/image";
+"use client";
+import React, { useEffect, useMemo, useState } from "react";
+import { daysInMonth, formattedDate } from "./utils";
+import WorkingHours from "./components/WorkingHours";
+import MonthSelector from "./components/MonthSelector";
+import YearSelector from "./components/YearSelector";
+import Calendar from "./components/Calendar";
 
-export default function Home() {
+const Home: React.FC = () => {
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [isWorkingHoursOpen, setIsWorkingHoursOpen] = useState(false);
+
+  useEffect(() => {
+    const date = new Date();
+    setSelectedMonth(date.getMonth() + 1);
+    setSelectedYear(date.getFullYear());
+  }, []);
+
+  const daysNumber = useMemo(() => {
+    if (selectedMonth && selectedYear) {
+      const numberOfDays = daysInMonth(selectedMonth, selectedYear);
+      return Array(numberOfDays)
+        .fill(null)
+        .map((_, i) => i + 1);
+    }
+    return null;
+  }, [selectedMonth, selectedYear]);
+
+  const firstMonthDay = useMemo(() => {
+    if (selectedMonth && selectedYear) {
+      const dayNum = new Date(`${selectedYear}-${selectedMonth}-01`).getDay();
+      if (dayNum === 0) {
+        return 7;
+      } else {
+        return dayNum;
+      }
+    }
+    return null;
+  }, [selectedMonth, selectedYear]);
+
+  const handleSelectedDay = (date: number) => {
+    const selectedDate = formattedDate(date, selectedMonth, selectedYear);
+    setSelectedDay(selectedDate);
+    setIsWorkingHoursOpen(true);
+  };
+
+  const handlerMonthsChanged = (month: number) => {
+    const normalizedMonth = (month + 12) % 12 || 12;
+    setSelectedMonth(normalizedMonth);
+    if (month === 13 && normalizedMonth === 1) {
+      setSelectedYear((prev) => (prev ? prev + 1 : null));
+    }
+    if (month === 0 && normalizedMonth === 12) {
+      setSelectedYear((prev) => (prev ? prev - 1 : null));
+    }
+  };
+
+  const handlerYearsChanged = (selectedYear: number) => {
+    return setSelectedYear(selectedYear);
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+    <main className="container mx-auto flex h-full w-full items-center p-2 sm:p-10 ">
+      <div className="relative z-10 flex flex-col gap-10  rounded-xl  border border-primary bg-zinc-800 p-1 shadow-lg shadow-black sm:p-4">
+        <div className="flex justify-between ">
+          <div className="flex items-center justify-center gap-2">
+            {selectedMonth && (
+              <MonthSelector
+                selectedMonth={selectedMonth}
+                handlerMonthsChanged={handlerMonthsChanged}
+              />
+            )}
+          </div>
+          {selectedYear && (
+            <YearSelector
+              selectedYear={selectedYear}
+              handlerYearsChanged={handlerYearsChanged}
             />
-          </a>
+          )}
         </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+        <div className="self-end ">
+          {daysNumber && firstMonthDay ? (
+            <Calendar
+              daysNumber={daysNumber}
+              firstMonthDay={firstMonthDay}
+              handleSelectedDay={handleSelectedDay}
+            />
+          ) : null}
+        </div>
+        <WorkingHours
+          isWorkingHoursOpen={isWorkingHoursOpen}
+          handleClose={() => setIsWorkingHoursOpen(false)}
+          date={selectedDay}
         />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
       </div>
     </main>
   );
-}
+};
+
+export default Home;
